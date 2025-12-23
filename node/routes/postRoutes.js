@@ -10,7 +10,8 @@ const {
   createPost,
   updatePost,
   deletePost,
-  getUserPosts
+  getUserPosts,
+  getPostCategories
 } = require('../controllers/postController');
 
 // 确保uploads目录存在
@@ -37,6 +38,7 @@ const upload = multer({ storage: storage });
 router.get('/', getAllPosts);
 router.get('/:id', getPostById);
 router.get('/user/:userId', getUserPosts);
+router.get('/categories/list', getPostCategories);
 
 // 私有路由
 router.post('/', protect, upload.array('images', 6), createPost);

@@ -35,10 +35,9 @@ const uploadSingleFile = (req, res) => {
     }
     
     // 构建完整的预览地址
-    // 动态获取主机信息，避免硬编码IP地址
-    const protocol = req.protocol || 'http';
-    const host = req.get('host') || 'localhost:5000'; // 优先使用请求的主机信息
-    const fileUrl = `${protocol}://${host}/uploads/${req.file.filename}`;
+    // 优先使用环境变量中的BASE_URL，否则使用请求的主机信息
+    const baseUrl = process.env.BASE_URL || `${req.protocol || 'http'}://${req.get('host') || 'localhost:5000'}`;
+    const fileUrl = `${baseUrl}/uploads/${req.file.filename}`;
     
     res.status(200).json({
         code: 200,
@@ -66,12 +65,11 @@ const uploadMultipleFiles = (req, res) => {
     }
     
     // 构建完整的预览地址
-    // 动态获取主机信息，避免硬编码IP地址
-    const protocol = req.protocol || 'http';
-    const host = req.get('host') || 'localhost:5000'; // 优先使用请求的主机信息
+    // 优先使用环境变量中的BASE_URL，否则使用请求的主机信息
+    const baseUrl = process.env.BASE_URL || `${req.protocol || 'http'}://${req.get('host') || 'localhost:5000'}`;
     
     const files = req.files.map(file => {
-        const fileUrl = `${protocol}://${host}/uploads/${file.filename}`;
+        const fileUrl = `${baseUrl}/uploads/${file.filename}`;
         return {
             filename: file.filename,
             url: fileUrl,

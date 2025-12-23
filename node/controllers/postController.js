@@ -13,14 +13,13 @@ const createPost = async (req, res) => {
     let images = [];
     
     // 构建完整的预览地址基础
-    // 动态获取主机信息，避免硬编码IP地址
-    const protocol = req.protocol || 'http';
-    const host = req.get('host') || 'localhost:5000'; // 优先使用请求的主机信息
+    // 优先使用环境变量中的BASE_URL，否则使用请求的主机信息
+    const baseUrl = process.env.BASE_URL || `${req.protocol || 'http'}://${req.get('host') || 'localhost:5000'}`;
     
     // 优先处理文件上传
     if (req.files && req.files.length > 0) {
       images = req.files.map(file => {
-        const fileUrl = `${protocol}://${host}/uploads/${file.filename}`;
+        const fileUrl = `${baseUrl}/uploads/${file.filename}`;
         return {
           filename: file.filename,
           url: fileUrl,
@@ -38,7 +37,7 @@ const createPost = async (req, res) => {
         // 如果是相对路径，转换为完整的预览地址
         let fullUrl = imageUrl;
         if (imageUrl.startsWith('/')) {
-          fullUrl = `${protocol}://${host}${imageUrl}`;
+          fullUrl = `${baseUrl}${imageUrl}`;
         }
         return {
           filename,
@@ -199,14 +198,13 @@ const updatePost = async (req, res) => {
     let images = post.images;
     
     // 构建完整的预览地址基础
-    // 动态获取主机信息，避免硬编码IP地址
-    const protocol = req.protocol || 'http';
-    const host = req.get('host') || 'localhost:5000'; // 优先使用请求的主机信息
+    // 优先使用环境变量中的BASE_URL，否则使用请求的主机信息
+    const baseUrl = process.env.BASE_URL || `${req.protocol || 'http'}://${req.get('host') || 'localhost:5000'}`;
     
     // 优先处理文件上传
     if (req.files && req.files.length > 0) {
       images = req.files.map(file => {
-        const fileUrl = `${protocol}://${host}/uploads/${file.filename}`;
+        const fileUrl = `${baseUrl}/uploads/${file.filename}`;
         return {
           filename: file.filename,
           url: fileUrl,
@@ -225,7 +223,7 @@ const updatePost = async (req, res) => {
           // 如果是相对路径，转换为完整的预览地址
           let fullUrl = imageUrl;
           if (imageUrl.startsWith('/')) {
-            fullUrl = `${protocol}://${host}${imageUrl}`;
+            fullUrl = `${baseUrl}${imageUrl}`;
           }
           return {
             filename,
@@ -330,11 +328,40 @@ const getUserPosts = async (req, res) => {
   }
 };
 
+// @desc    获取帖子分类列表
+// @route   GET /api/v1/posts/categories
+// @access  Public
+const getPostCategories = async (req, res) => {
+  try {
+    // 从Post模型的category字段定义中获取所有分类
+    // 注意：这种方法只适用于Sequelize的ENUM类型
+    const categories = Post.rawAttributes.category.values || [
+      '生活分享', '求助', '通知', '活动', '其他'
+    ];
+
+    // 格式化分类数据
+    const formattedCategories = categories.map(category => ({
+      label: category,
+      value: category
+    }));
+
+    // 返回响应
+    res.status(200).json({
+      code: 200,
+      message: 'Post categories retrieved successfully',
+      data: formattedCategories
+    });
+  } catch (error) {
+    res.status(400).json({ code: 400, message: error.message });
+  }
+};
+
 module.exports = {
   createPost,
   getAllPosts,
   getPostById,
   updatePost,
   deletePost,
-  getUserPosts
+  getUserPosts,
+  getPostCategories
 };
