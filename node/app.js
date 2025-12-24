@@ -3,11 +3,25 @@ const cors = require('cors');
 const helmet = require('helmet');
 const morgan = require('morgan');
 const dotenv = require('dotenv');
-const { sequelize, testConnection, syncModels } = require('./utils/db');
-const setupAssociations = require('./models/associations');
 
-// 加载环境变量
-dotenv.config();
+// 加载环境变量（尝试不同路径）
+dotenv.config({ path: '.env' });
+dotenv.config({ path: './.env' });
+dotenv.config({ path: '../.env' });
+
+// 动态导入数据库连接，避免在依赖安装前加载
+let sequelize, testConnection, syncModels;
+try {
+  const db = require('./utils/db');
+  sequelize = db.sequelize;
+  testConnection = db.testConnection;
+  syncModels = db.syncModels;
+} catch (error) {
+  console.error('Database connection module error:', error.message);
+  // 在依赖安装阶段，允许继续执行
+}
+
+const setupAssociations = require('./models/associations');
 
 // 创建Express应用
 const app = express();
@@ -36,6 +50,11 @@ app.use('/uploads', (req, res, next) => {
 // 数据库连接
 const connectDatabase = async () => {
   try {
+    if (!testConnection) {
+      console.warn('Database connection module not available, skipping connection test');
+      return;
+    }
+    
     // 测试数据库连接
     await testConnection();
     // 设置模型关联
@@ -48,7 +67,8 @@ const connectDatabase = async () => {
     // 在开发环境中，不要直接退出进程
     // 而是记录错误并允许服务器继续运行
     if (process.env.NODE_ENV === 'production') {
-      process.exit(1);
+      // 在生产环境中也不要退出，而是继续运行服务器
+      console.warn('Continuing server startup despite database connection error');
     }
   }
 };
