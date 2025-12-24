@@ -10,18 +10,19 @@ const sequelize = new Sequelize(
     host: process.env.DB_HOST,
     port: process.env.DB_PORT,
     dialect: 'postgres',
-    logging: console.log,
+    logging: process.env.NODE_ENV === 'development' ? console.log : false,
     pool: {
-      max: 5,
+      max: 1, // 减少连接池大小，适合开发环境
       min: 0,
-      acquire: 30000,
-      idle: 10000
+      acquire: 10000, // 减少超时时间
+      idle: 5000
     },
     dialectOptions: {
       ssl: {
         require: true,
         rejectUnauthorized: false
-      }
+      },
+      connectTimeout: 10000 // 设置连接超时
     }
   }
 );
@@ -33,7 +34,11 @@ const testConnection = async () => {
     console.log('PostgreSQL connected successfully');
   } catch (error) {
     console.error('PostgreSQL connection failed:', error.message);
-    process.exit(1);
+    // 在开发环境中，不要直接退出进程
+    // 而是记录错误并允许服务器继续运行
+    if (process.env.NODE_ENV === 'production') {
+      process.exit(1);
+    }
   }
 };
 
@@ -44,7 +49,11 @@ const syncModels = async () => {
     console.log('Database models synchronized');
   } catch (error) {
     console.error('Error synchronizing database models:', error.message);
-    process.exit(1);
+    // 在开发环境中，不要直接退出进程
+    // 而是记录错误并允许服务器继续运行
+    if (process.env.NODE_ENV === 'production') {
+      process.exit(1);
+    }
   }
 };
 

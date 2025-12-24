@@ -36,6 +36,7 @@ app.use('/uploads', (req, res, next) => {
 // 数据库连接
 const connectDatabase = async () => {
   try {
+    // 测试数据库连接
     await testConnection();
     // 设置模型关联
     setupAssociations();
@@ -44,12 +45,16 @@ const connectDatabase = async () => {
     console.log('Database connected successfully (model sync skipped)');
   } catch (error) {
     console.error('Database connection error:', error);
-    process.exit(1);
+    // 在开发环境中，不要直接退出进程
+    // 而是记录错误并允许服务器继续运行
+    if (process.env.NODE_ENV === 'production') {
+      process.exit(1);
+    }
   }
 };
 
-// 连接数据库
-connectDatabase();
+// 连接数据库（异步执行，不阻塞服务器启动）
+connectDatabase().catch(console.error);
 
 // 路由配置
 app.use('/api/v1/users', require('./routes/userRoutes'));
@@ -66,6 +71,15 @@ app.use('/api/v1/banners', require('./routes/bannerRoutes'));
 // 根路由
 app.get('/', (req, res) => {
   res.json({ message: 'Community App API is running' });
+});
+
+// 健康检查端点
+app.get('/health', (req, res) => {
+  res.json({ 
+    status: 'ok', 
+    timestamp: new Date().toISOString(),
+    message: '服务器运行正常' 
+  });
 });
 
 // 404处理
